@@ -297,6 +297,35 @@ def _resolve_lucaone_model_id(llm_dirpath, seq_type: str) -> Optional[str]:
     return None
 
 
+def _resolve_esm2_model_id(version) -> str:
+    env_model = os.environ.get("ESM_HF_MODEL_ID")
+    if env_model:
+        return env_model
+
+    if isinstance(version, str) and "/" in version:
+        return version
+    if version in _ESM2_MODEL_IDS:
+        return _ESM2_MODEL_IDS[version]
+
+    normalized = str(version).lower() if version is not None else ""
+    alias = {
+        "esm2": "3B",
+        "esm2-3b": "3B",
+        "esm2_3b": "3B",
+        "3b": "3B",
+        "esm2-650m": "650M",
+        "esm2_650m": "650M",
+        "650m": "650M",
+        "esm2-150m": "150M",
+        "esm2_150m": "150M",
+        "150m": "150M",
+        "esm2-15b": "15B",
+        "esm2_15b": "15B",
+        "15b": "15B",
+    }
+    return _ESM2_MODEL_IDS[alias.get(normalized, "3B")]
+
+
 def predict_embedding_luca(
     llm_dirpath,
     sample,
@@ -340,7 +369,8 @@ def predict_embedding_dnabert2(
 ):
     assert "bos" in embedding_type or "representations" in embedding_type \
            or "matrix" in embedding_type or "vector" in embedding_type or "contacts" in embedding_type
-    model_id = version if "/" in str(version) else _DNABERT2_MODEL_ID
+    env_model = os.environ.get("DNABERT2_HF_MODEL_ID")
+    model_id = env_model or (version if "/" in str(version) else _DNABERT2_MODEL_ID)
     return _predict_embedding_hf(
         model_id=model_id,
         sample=sample,
@@ -365,7 +395,8 @@ def predict_embedding_dnaberts(
 ):
     assert "bos" in embedding_type or "representations" in embedding_type \
            or "matrix" in embedding_type or "vector" in embedding_type or "contacts" in embedding_type
-    model_id = version if "/" in str(version) else _DNABERTS_MODEL_ID
+    env_model = os.environ.get("DNABERTS_HF_MODEL_ID")
+    model_id = env_model or (version if "/" in str(version) else _DNABERTS_MODEL_ID)
     return _predict_embedding_hf(
         model_id=model_id,
         sample=sample,
@@ -390,7 +421,7 @@ def predict_embedding_esm(
 ):
     assert "bos" in embedding_type or "representations" in embedding_type \
            or "matrix" in embedding_type or "vector" in embedding_type or "contacts" in embedding_type
-    model_id = _ESM2_MODEL_IDS.get(version, version if "/" in str(version) else _ESM2_MODEL_IDS["3B"])
+    model_id = _resolve_esm2_model_id(version)
     return _predict_embedding_hf(
         model_id=model_id,
         sample=sample,
@@ -400,4 +431,27 @@ def predict_embedding_esm(
         device=device,
         matrix_add_special_token=matrix_add_special_token,
         clean_func=clean_seq_esm,
+    )
+
+
+def predict_embedding_esm2(
+    sample,
+    trunc_type,
+    embedding_type,
+    repr_layers=[-1],
+    truncation_seq_length=4094,
+    device=None,
+    version="3B",
+    matrix_add_special_token=False,
+):
+    # Explicit ESM2 entrypoint for clarity.
+    return predict_embedding_esm(
+        sample=sample,
+        trunc_type=trunc_type,
+        embedding_type=embedding_type,
+        repr_layers=repr_layers,
+        truncation_seq_length=truncation_seq_length,
+        device=device,
+        version=version,
+        matrix_add_special_token=matrix_add_special_token,
     )
