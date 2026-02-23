@@ -102,7 +102,7 @@ def parse_args():
     parser.add_argument("--disable_embedding_complete", action="store_true", help="Disable long sequence completion")
     parser.add_argument("--disable_embedding_complete_seg_overlap", action="store_true", help="Disable overlap completion")
     parser.add_argument("--embedding_fixed_len_a_time", default=None, type=int, help="Fixed infer length per forward for long seq")
-    parser.add_argument("--gpu_id", default=-1, type=int, help="GPU id, -1 for CPU")
+    parser.add_argument("--gpu_id", default=0, type=int, help="GPU id (default: 0). Set -1 for CPU")
 
     return parser.parse_args()
 
