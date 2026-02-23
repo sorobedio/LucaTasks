@@ -45,6 +45,19 @@ except ImportError as e:
 MAX_SEQ_LEN = 10240
 
 
+def _load_cached_embedding(filepath):
+    """
+    PyTorch 2.6 changed torch.load default to weights_only=True.
+    Cached embeddings in this project may contain numpy objects, so
+    they need weights_only=False when loaded from trusted local files.
+    """
+    try:
+        return torch.load(filepath, weights_only=False)
+    except TypeError:
+        # Backward compatibility for older PyTorch versions without weights_only.
+        return torch.load(filepath)
+
+
 def complete_embedding_matrix(
         seq_id,
         seq_type,
@@ -396,7 +409,7 @@ class Encoder(object):
                 for dirpath in dirpath_list:
                     emb_filepath = os.path.join(dirpath, emb_filename)
                     if os.path.exists(emb_filepath):
-                        embedding_info = torch.load(emb_filepath)
+                        embedding_info = _load_cached_embedding(emb_filepath)
                         self.put_into_buffer(seq_id, embedding_info)
                         return embedding_info
             except Exception as e:
@@ -409,7 +422,7 @@ class Encoder(object):
                 for dirpath in dirpath_list:
                     emb_filepath = os.path.join(dirpath, emb_filename)
                     if os.path.exists(emb_filepath):
-                        embedding_info = torch.load(emb_filepath)
+                        embedding_info = _load_cached_embedding(emb_filepath)
                         self.seq_id_2_emb_filename[seq_id] = emb_filename
                         self.put_into_buffer(seq_id, embedding_info)
                         return embedding_info
@@ -1088,7 +1101,7 @@ class Encoder(object):
                 for vector_dir in self.vector_dirpath:
                     vector_filepath = os.path.join(vector_dir, vector_filename)
                     if os.path.exists(vector_filepath):
-                        vector = torch.load(vector_filepath)
+                        vector = _load_cached_embedding(vector_filepath)
                         break
             elif isinstance(vector_filename, np.ndarray) or isinstance(vector_filename, torch.Tensor):
                 vector = vector_filename
@@ -1109,7 +1122,7 @@ class Encoder(object):
                 for matrix_dir in self.matrix_dirpath:
                     matrix_filepath = os.path.join(matrix_dir, matrix_filename)
                     if os.path.exists(matrix_filepath):
-                        matrix = torch.load(matrix_filepath)
+                        matrix = _load_cached_embedding(matrix_filepath)
                         break
             elif isinstance(matrix_filename, np.ndarray) or isinstance(matrix_filename, torch.Tensor):
                 matrix = matrix_filename
@@ -1175,7 +1188,7 @@ class Encoder(object):
                 for vector_dir in self.vector_dirpath:
                     vector_filepath_a = os.path.join(vector_dir, vector_filename_a)
                     if os.path.exists(vector_filepath_a):
-                        vector_a = torch.load(vector_filepath_a)
+                        vector_a = _load_cached_embedding(vector_filepath_a)
                         break
             elif isinstance(vector_filename_a, np.ndarray) or isinstance(vector_filename_a, torch.Tensor):
                 vector_a = vector_filename_a
@@ -1193,7 +1206,7 @@ class Encoder(object):
                 for vector_dir in self.vector_dirpath:
                     vector_filepath_b = os.path.join(vector_dir, vector_filename_b)
                     if os.path.exists(vector_filepath_b):
-                        vector_b = torch.load(vector_filepath_b)
+                        vector_b = _load_cached_embedding(vector_filepath_b)
                         break
             elif isinstance(vector_filename_b, np.ndarray) or isinstance(vector_filename_b, torch.Tensor):
                 vector_b = vector_filename_b
@@ -1212,7 +1225,7 @@ class Encoder(object):
                 for matrix_dir in self.matrix_dirpath:
                     matrix_filepath_a = os.path.join(matrix_dir, matrix_filename_a)
                     if os.path.exists(matrix_filepath_a):
-                        matrix_a = torch.load(matrix_filepath_a)
+                        matrix_a = _load_cached_embedding(matrix_filepath_a)
                         break
             elif isinstance(matrix_filename_a, np.ndarray) or isinstance(matrix_filename_a, torch.Tensor):
                 matrix_a = matrix_filename_a
@@ -1227,7 +1240,7 @@ class Encoder(object):
                 for matrix_dir in self.matrix_dirpath:
                     matrix_filepath_b = os.path.join(matrix_dir, matrix_filename_b)
                     if os.path.exists(matrix_filepath_b):
-                        matrix_b = torch.load(matrix_filepath_b)
+                        matrix_b = _load_cached_embedding(matrix_filepath_b)
                         break
             elif isinstance(matrix_filename_b, np.ndarray) or isinstance(matrix_filename_b, torch.Tensor):
                 matrix_b = matrix_filename_b
